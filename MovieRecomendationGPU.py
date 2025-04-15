@@ -296,7 +296,7 @@ def load_model_and_recommend(
 ###################################################
 if __name__ == "__main__":
     # 1) Обучаем модель (делается один раз)
-    model = MaxvolCURModel(r=None, device="cuda", e=1.05, k=100)
+    model = MaxvolCURModel(r=7000, device="cuda", e=1.05, k=100)
     model.fit(
         ratings_csv="UI_data_2.csv",         # Ваш файл с рейтингами
         film_titles_csv=None,               # Или csv с (id, title)
@@ -306,13 +306,15 @@ if __name__ == "__main__":
     
     # 2) В реальном приложении, когда хотим выдать рекомендации:
     user_ratings_title_based = {
-        "film 10": 5,   # Пользователь ввёл "film 10" - ищем ближайшее название
-        "film 25": 3,
+        "Film 2957": 5,   # Пользователь ввёл "film 10" - ищем ближайшее название
+        "Film 2958": 5,
+        "Film 2959": 5,
+        "Film 2956": 5
     }
     recommended = load_model_and_recommend(
         model_dir="my_cur_model",
         user_ratings_title_based=user_ratings_title_based,
-        top_n=5,
+        top_n=10,
         min_score=1.0
     )
     
