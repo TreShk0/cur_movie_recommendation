@@ -145,6 +145,7 @@ class MaxvolCURModel:
 
         U = np.linalg.inv(submatrix.cpu().numpy())
         self.UR_ = U @ R                     # (r × m)
+        error = np.linalg.norm(C@U@R - values)/np.linalg.norm(values)
 
         # 5. Сохраняем
         os.makedirs(save_dir, exist_ok=True)
@@ -164,6 +165,7 @@ class MaxvolCURModel:
             )
 
         print(f"Model trained. UR shape={self.UR_.shape}. Saved to {save_dir}")
+        print(f'Error: {error:.4f}')
 
 ###################################################
 # Функция inference
@@ -233,21 +235,21 @@ def load_model_and_recommend(
 # Пример запуска
 ###################################################
 if __name__ == "__main__":
-    model = MaxvolCURModel(r=1400, device="cuda")
+    model = MaxvolCURModel(r=3700, device="cuda")
     model.fit(
         ratings_csv="UI_data_2.csv",
         film_titles_csv=None,          # названия берутся из заголовков
-        save_dir="my_cur_model_fixed",
+        save_dir="my_cur_model",
     )
 
     user_ratings = {
-        "Film 2957": 5,
-        "Film 2958": 5,
-        "Film 2959": 5,
-        "Film 2956": 5,
+        "Harry Potter and the Half-Blood Prince (2009)": 5,
+        "Harry Potter and the Deathly Hallows: Part 2 (2011)": 5,
+        "Harry Potter and the Deathly Hallows: Part 1 (2010": 5,
+        "Harry Potter and the Prisoner of Azkaban (2004)": 5,
     }
     recs = load_model_and_recommend(
-        "my_cur_model_fixed",
+        "my_cur_model",
         user_ratings,
         top_n=10,
         min_score=1.0,
