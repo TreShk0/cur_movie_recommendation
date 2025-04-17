@@ -247,6 +247,8 @@ if __name__ == "__main__":
         "Harry Potter and the Deathly Hallows: Part 2 (2011)": 5,
         "Harry Potter and the Deathly Hallows: Part 1 (2010": 5,
         "Harry Potter and the Prisoner of Azkaban (2004)": 5,
+        "Friends with Benefits (2011)": 5,
+        'Devil Wears Prada, The (2006)': 5
     }
     recs = load_model_and_recommend(
         "my_cur_model",

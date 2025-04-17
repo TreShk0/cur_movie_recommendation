@@ -101,7 +101,7 @@ def block_maxvol_gpu(A, e=1.05, k=100, chunk_size=10_000):
         if max_val <= e: break
         I[max_col] = max_row
         sub = A[I, :]
-        inv_sub = torch.inverse(sub)
+        inv_sub = torch.pinverse(sub)
     return I, inv_sub
 
 # -------------------------------------------------
@@ -274,25 +274,41 @@ def load_model_and_recommend(
 # 5. Пример запуска
 # -------------------------------------------------
 if __name__ == "__main__":
-    model = MaxvolCURModel(r=3792, device="cuda")
+    model = MaxvolCURModel(r=11500, device="cuda")
     model.fit(
         ratings_csv="UI_data_2.csv",
         save_dir="cur_model_chunked",
         chunked=True,
-        chunk_size=50_000,
+        chunk_size=20_000,
     )
 
     user_ratings = {
+        "Friends with Benefits (2011)": 3,
+        'Devil Wears Prada, The (2006)': 5,
+        'Crazy, Stupid, Love. (2011)':5,
+        'Palm Springs (2020)':3,
+        'Hangover, The (2009)':5,
+        "The Devil's Advocate (1997)": 5,
+        "Bad Boys (1995)":5,
+        "Bad Boys II (2003)":4,
+        'Avatar (2009)':5,
+        "Avatar: The Way of Water (2022)":5,
         "Harry Potter and the Half-Blood Prince (2009)": 5,
         "Harry Potter and the Deathly Hallows: Part 2 (2011)": 5,
         "Harry Potter and the Deathly Hallows: Part 1 (2010": 5,
         "Harry Potter and the Prisoner of Azkaban (2004)": 5,
+        'Hot Fuzz (2007)': 5,
+        "In Bruges (2008)":5,
+        "The Nice Guys (2016)":5,
+        "Snatch (2000)": 4
+
+
     }
     recs, matched = load_model_and_recommend(
         model_dir="my_cur_model",
         user_ratings_title_based=user_ratings,
         top_n=10,
-        min_score=1.0,
+        min_score=1,
     )
 
     print("Рекомендации:")
