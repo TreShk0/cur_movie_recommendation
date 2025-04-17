@@ -208,33 +208,67 @@ def load_model_and_recommend(
     top_n: int = 5,
     min_score: float = 1.0,
 ):
-    UR = np.load(os.path.join(model_dir, "UR.npy"))
+    """
+    Возвращает:
+      recs    — топ‑N рекомендаций  [(title, score), …]
+      matched — фильмы, которые модель нашла во вводе пользователя
+                и действительно использовала в векторе c
+                [(matched_title, score_in_model), …]
+    """
+    UR   = np.load(os.path.join(model_dir, "UR.npy"))
     cols = np.load(os.path.join(model_dir, "cols.npy"))
     with open(os.path.join(model_dir, "metadata.pkl"), "rb") as f:
         meta = pickle.load(f)
+
     film_to_id, id_to_film = meta["film_to_id_"], meta["id_to_film_"]
     m, r = meta["m"], meta["r"]
+
+    # id фильма → позиция столбца в C
     film_id_to_pos = {int(fid): int(pos) for pos, fid in enumerate(cols)}
-    c = np.zeros(r, dtype=np.float32)
+
+    # ---------- 1. формируем вектор c ----------
+    c              = np.zeros(r, dtype=np.float32)
+    matched        = []          # что именно «узнали» во вводе
+
     all_titles = list(film_to_id.keys())
-    for title_raw, rating in user_ratings_title_based.items():
-        match = difflib.get_close_matches(title_raw, all_titles, n=1, cutoff=0.0)
+    for raw_title, rating in user_ratings_title_based.items():
+        match = difflib.get_close_matches(raw_title, all_titles, n=1, cutoff=0.0)
+        if not match:
+            continue
+        fid = film_to_id[match[0]]
+        if fid in film_id_to_pos:                     # фильм действительно в C
+            pos = film_id_to_pos[fid]
+            c[pos] = rating
+
+    # ---------- 2. предсказание ----------
+    pred_full = c @ UR                               # до зануления
+    # Заполняем список matched
+    for raw_title in user_ratings_title_based:
+        match = difflib.get_close_matches(raw_title, all_titles, n=1, cutoff=0.0)
+        if not match:
+            continue
+        fid = film_to_id[match[0]]
+        if fid in film_id_to_pos:
+            matched.append((id_to_film.get(fid, f"Film {fid}"), float(pred_full[fid])))
+
+    # ---------- 3. маскируем уже оценённые фильмы ----------
+    pred = pred_full.copy()
+    for raw_title in user_ratings_title_based:
+        match = difflib.get_close_matches(raw_title, all_titles, n=1, cutoff=0.0)
         if match:
             fid = film_to_id[match[0]]
-            if fid in film_id_to_pos:
-                c[film_id_to_pos[fid]] = rating
-    pred = c @ UR
-    for title_raw in user_ratings_title_based:
-        match = difflib.get_close_matches(title_raw, all_titles, n=1, cutoff=0.0)
-        if match:
-            fid = film_to_id[match[0]]
-            if 0 <= fid < m: pred[fid] = -1e9
+            if 0 <= fid < m:
+                pred[fid] = -1e9
+
+    # ---------- 4. top‑N ----------
     idx_sorted = np.argsort(pred)[::-1]
     recs = []
     for idx in idx_sorted:
-        if len(recs) >= top_n or pred[idx] < min_score: break
+        if len(recs) >= top_n or pred[idx] < min_score:
+            break
         recs.append((id_to_film.get(idx, f"Film {idx}"), float(pred[idx])))
-    return recs
+
+    return recs, matched
 
 # -------------------------------------------------
 # 5. Пример запуска
@@ -254,12 +288,17 @@ if __name__ == "__main__":
         "Harry Potter and the Deathly Hallows: Part 1 (2010": 5,
         "Harry Potter and the Prisoner of Azkaban (2004)": 5,
     }
-    recs = load_model_and_recommend(
-        "my_cur_model",
-        user_ratings,
+    recs, matched = load_model_and_recommend(
+        model_dir="my_cur_model",
+        user_ratings_title_based=user_ratings,
         top_n=10,
         min_score=1.0,
     )
+
     print("Рекомендации:")
     for t, s in recs:
+        print(f" • {t}  (pred={s:.2f})")
+
+    print("\nСовпавшие вводы:")
+    for t, s in matched:
         print(f" • {t}  (pred={s:.2f})")
