@@ -240,12 +240,26 @@ def load_model_and_recommend(
 # 5. Пример запуска
 # -------------------------------------------------
 if __name__ == "__main__":
-    model = MaxvolCURModel(r=1400, device="cuda")
+    model = MaxvolCURModel(r=3792, device="cuda")
     model.fit(
         ratings_csv="UI_data_2.csv",
         save_dir="cur_model_chunked",
-        chunked=True,            # <-- включаем батч‑режим
-        chunk_size=5_000,
+        chunked=True,
+        chunk_size=50_000,
     )
-    user_ratings = {"Film 2957": 5, "Film 2958": 5, "Film 2959": 5, "Film 2956": 5}
-    print(load_model_and_recommend("cur_model_chunked", user_ratings, top_n=10))
+
+    user_ratings = {
+        "Harry Potter and the Half-Blood Prince (2009)": 5,
+        "Harry Potter and the Deathly Hallows: Part 2 (2011)": 5,
+        "Harry Potter and the Deathly Hallows: Part 1 (2010": 5,
+        "Harry Potter and the Prisoner of Azkaban (2004)": 5,
+    }
+    recs = load_model_and_recommend(
+        "my_cur_model",
+        user_ratings,
+        top_n=10,
+        min_score=1.0,
+    )
+    print("Рекомендации:")
+    for t, s in recs:
+        print(f" • {t}  (pred={s:.2f})")
