@@ -274,12 +274,12 @@ def load_model_and_recommend(
 # 5. Пример запуска
 # -------------------------------------------------
 if __name__ == "__main__":
-    model = MaxvolCURModel(r=11500, device="cuda")
+    model = MaxvolCURModel(r=5000, device="cuda")
     model.fit(
-        ratings_csv="UI_data_2.csv",
+        ratings_csv="UI_data_3.csv",
         save_dir="cur_model_chunked",
-        chunked=True,
-        chunk_size=20_000,
+        chunked=False,
+        chunk_size=5_000,
     )
 
     user_ratings = {
@@ -305,7 +305,7 @@ if __name__ == "__main__":
 
     }
     recs, matched = load_model_and_recommend(
-        model_dir="my_cur_model",
+        model_dir="cur_model_chunked",
         user_ratings_title_based=user_ratings,
         top_n=10,
         min_score=1,

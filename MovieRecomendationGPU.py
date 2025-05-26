@@ -104,7 +104,7 @@ class MaxvolCURModel:
         save_dir: str = "model_data",
     ):
         # 1. Загружаем матрицу рейтингов
-        df = pd.read_csv(ratings_csv)
+        df = pd.read_csv(ratings_csv, nrows=100_000)
         if "userId" in df.columns:
             df.drop(columns=["userId"], inplace=True)
         values = df.values.astype(np.float32)
@@ -234,28 +234,48 @@ def load_model_and_recommend(
 ###################################################
 # Пример запуска
 ###################################################
+
+import time
 if __name__ == "__main__":
-    model = MaxvolCURModel(r=3700, device="cuda")
+    start = time.time()
+    model = MaxvolCURModel(r=5000, device="cuda")
     model.fit(
         ratings_csv="UI_data_2.csv",
         film_titles_csv=None,          # названия берутся из заголовков
-        save_dir="my_cur_model",
+        save_dir="my_cur_model_1",
     )
 
+    
     user_ratings = {
+        "Friends with Benefits (2011)": 3,
+        'Devil Wears Prada, The (2006)': 5,
+        'Crazy, Stupid, Love. (2011)':5,
+        'Palm Springs (2020)':3,
+        'Hangover, The (2009)':5,
+        "The Devil's Advocate (1997)": 5,
+        "Bad Boys (1995)":5,
+        "Bad Boys II (2003)":4,
+        'Avatar (2009)':5,
+        "Avatar: The Way of Water (2022)":5,
         "Harry Potter and the Half-Blood Prince (2009)": 5,
         "Harry Potter and the Deathly Hallows: Part 2 (2011)": 5,
-        "Harry Potter and the Deathly Hallows: Part 1 (2010": 5,
+        "Harry Potter and the Deathly Hallows: Part 1 (2010)": 5,
         "Harry Potter and the Prisoner of Azkaban (2004)": 5,
-        "Friends with Benefits (2011)": 5,
-        'Devil Wears Prada, The (2006)': 5
+        'Hot Fuzz (2007)': 5,
+        "In Bruges (2008)":5,
+        "The Nice Guys (2016)":5,
+        "Snatch (2000)": 4
     }
+
     recs = load_model_and_recommend(
-        "my_cur_model",
+        "my_cur_model_1",
         user_ratings,
         top_n=10,
         min_score=1.0,
     )
+    end = time.time()
     print("Рекомендации:")
     for t, s in recs:
         print(f" • {t}  (pred={s:.2f})")
+
+    print(f'Время затраченное на CUR: {end-start}')
